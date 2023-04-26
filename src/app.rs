@@ -1,3 +1,6 @@
+use std::thread;
+use std::thread::spawn;
+use std::time::Duration;
 use eframe::egui;
 use eframe::epaint;
 
@@ -6,11 +9,19 @@ pub struct MyApp {
 }
 
 impl MyApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
+        let ectx = cc.egui_ctx.clone();
+
+        spawn (move || {
+            loop {
+                ectx.request_repaint();
+                thread::sleep(Duration::from_secs(1));
+            }
+        });
         MyApp { times: 4 }
     }
 }
