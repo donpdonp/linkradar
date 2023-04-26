@@ -1,6 +1,6 @@
 use eframe::egui;
+use eframe::epaint;
 use eframe::egui::{Color32, Pos2, Shape, Stroke};
-use eframe::epaint::CircleShape;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
@@ -33,7 +33,7 @@ impl eframe::App for MyApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             let win_size = frame.info().window_info.size;
             ui.heading("linkmonitor");
-            let circle = CircleShape {
+            let circle = epaint::CircleShape {
                 center: Pos2 {
                     x: win_size.x/2.0,
                     y: self.times as f32,
