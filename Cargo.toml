@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 eframe = "0.21.3"
+env_logger = "0.10.0"
+fastping-rs = "0.2.3"
+log = "0.4.17"
