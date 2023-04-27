@@ -10,7 +10,7 @@ fn main() -> Result<(), eframe::Error> {
 
     let (app_sender, app_receiver) = channel::<bool>();
 
-    let pingdb = pingdb::Pingdb::new(app_sender);
+    let _pingdb = pingdb::Pingdb::new(app_sender);
     apploop(app_receiver)
 }
 

@@ -6,9 +6,11 @@ use std::time::Duration;
 use eframe::egui;
 use eframe::egui::Context;
 use eframe::epaint;
+use log::info;
 
 pub struct MyApp {
-    times: u32,
+    height: u32,
+    momentum: i32,
     pub app_receiver: Receiver<bool>,
 }
 
@@ -21,7 +23,8 @@ impl MyApp {
         let (app_sender, app_receiver) = channel::<bool>();
         let ectx = cc.egui_ctx.clone();
         let app = MyApp {
-            times: 4,
+            height: 0,
+            momentum: 0,
             app_receiver,
         };
         spawn(move || netloop(ping_receiver, ectx, app_sender));
@@ -47,25 +50,42 @@ impl eframe::App for MyApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.app_receiver.try_recv() {
                 Ok(result) => match result {
-                    true => self.times = 0,
+                    true => {
+                        info!("good ping, bumping momentum {} by 10", self.momentum);
+                        self.momentum = 20
+                    }
                     false => {}
                 },
                 Err(_) => {}
             }
             let win_size = frame.info().window_info.size;
-            ui.heading("linkmonitor");
+            //ui.heading("linkmonitor");
             let circle = epaint::CircleShape {
                 center: egui::Pos2 {
                     x: win_size.x / 2.0,
-                    y: self.times as f32,
+                    y: win_size.y - self.height as f32,
                 },
                 radius: win_size.x * 0.2,
                 fill: egui::Color32::RED,
                 stroke: egui::Stroke::new(4.0, egui::Color32::YELLOW),
             };
             ui.painter().add(egui::Shape::Circle(circle));
-            if self.times < win_size.y as u32 {
-                self.times += 2
+            info!("height {} momentum {}", self.height, self.momentum);
+            self.momentum -= 1;
+            if self.height < win_size.y as u32 {
+                let delta = self.momentum;
+                if delta >= 0 {
+                    self.height += delta as u32
+                } else {
+                    let d = delta.abs() as u32;
+                    if self.height > d {
+                        self.height -= d
+                    } else {
+                        self.height = 10
+                    }
+                }
+            } else {
+                self.momentum = 0;
             }
         });
     }
