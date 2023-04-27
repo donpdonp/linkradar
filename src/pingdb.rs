@@ -3,10 +3,9 @@ use std::thread;
 use std::thread::spawn;
 use std::time::Duration;
 
-use fastping_rs::{Pinger, PingResult};
+use fastping_rs::{PingResult, Pinger};
 
-pub struct Pingdb {
-}
+pub struct Pingdb {}
 
 impl Pingdb {
     pub(crate) fn new(app_sender: Sender<()>) -> Self {
@@ -19,8 +18,7 @@ impl Pingdb {
 
         spawn(move || netloop(results, app_sender));
 
-        Pingdb{
-        }
+        Pingdb {}
     }
 }
 

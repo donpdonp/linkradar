@@ -35,8 +35,8 @@ fn netloop(ping_receiver: Receiver<()>, ectx: Context, send: Sender<()>) {
             Ok(result) => {
                 send.send(()).unwrap();
                 ectx.request_repaint();
-            },
-            Err(_) => { },
+            }
+            Err(_) => {}
         }
         thread::sleep(Duration::from_secs(1));
     }
