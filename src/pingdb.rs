@@ -8,7 +8,7 @@ use fastping_rs::{PingResult, Pinger};
 pub struct Pingdb {}
 
 impl Pingdb {
-    pub(crate) fn new(app_sender: Sender<()>) -> Self {
+    pub(crate) fn new(app_sender: Sender<bool>) -> Self {
         let (pinger, results) = match Pinger::new(None, Some(56)) {
             Ok((pinger, results)) => (pinger, results),
             Err(e) => panic!("Error creating pinger: {}", e),
@@ -22,8 +22,9 @@ impl Pingdb {
     }
 }
 
-fn netloop(results: Receiver<PingResult>, send: Sender<()>) {
+fn netloop(results: Receiver<PingResult>, send: Sender<bool>) {
     loop {
+        let mut good = false;
         match results.recv() {
             Ok(result) => match result {
                 PingResult::Idle { addr } => {
@@ -31,11 +32,12 @@ fn netloop(results: Receiver<PingResult>, send: Sender<()>) {
                 }
                 PingResult::Receive { addr, rtt } => {
                     log::info!("Receive from Address {} in {:?}.", addr, rtt);
+                    good = true;
                 }
             },
             Err(_) => panic!("Worker threads disconnected before the solution was found!"),
         }
-        send.send(()).unwrap();
+        send.send(good).unwrap();
         thread::sleep(Duration::from_secs(1));
     }
 }

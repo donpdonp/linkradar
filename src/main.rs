@@ -8,15 +8,15 @@ fn main() -> Result<(), eframe::Error> {
     env_logger::init();
     log::info!("linkradar");
 
-    let (app_sender, app_receiver) = channel::<()>();
+    let (app_sender, app_receiver) = channel::<bool>();
 
     let pingdb = pingdb::Pingdb::new(app_sender);
     apploop(app_receiver)
 }
 
-fn apploop(app_receiver: Receiver<()>) -> Result<(), eframe::Error> {
+fn apploop(app_receiver: Receiver<bool>) -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(40.0, 440.0)),
+        initial_window_size: Some(egui::vec2(40.0, 300.0)),
         ..Default::default()
     };
 

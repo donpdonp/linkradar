@@ -9,16 +9,16 @@ use eframe::epaint;
 
 pub struct MyApp {
     times: u32,
-    pub app_receiver: Receiver<()>,
+    pub app_receiver: Receiver<bool>,
 }
 
 impl MyApp {
-    pub fn new(cc: &eframe::CreationContext<'_>, ping_receiver: Receiver<()>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>, ping_receiver: Receiver<bool>) -> Self {
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
-        let (app_sender, app_receiver) = channel::<()>();
+        let (app_sender, app_receiver) = channel::<bool>();
         let ectx = cc.egui_ctx.clone();
         let app = MyApp {
             times: 4,
@@ -29,16 +29,16 @@ impl MyApp {
     }
 }
 
-fn netloop(ping_receiver: Receiver<()>, ectx: Context, send: Sender<()>) {
+fn netloop(ping_receiver: Receiver<bool>, ectx: Context, send: Sender<bool>) {
     loop {
-        match ping_receiver.recv() {
+        match ping_receiver.try_recv() {
             Ok(result) => {
-                send.send(()).unwrap();
-                ectx.request_repaint();
+                send.send(result).unwrap();
             }
             Err(_) => {}
         }
-        thread::sleep(Duration::from_secs(1));
+        ectx.request_repaint();
+        thread::sleep(Duration::from_millis(100));
     }
 }
 
@@ -46,7 +46,9 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.app_receiver.try_recv() {
-                Ok(_) => self.times = 0,
+                Ok(result) => match result { true => self.times = 0,
+                    false => {}
+                },
                 Err(_) => {}
             }
             let win_size = frame.info().window_info.size;
@@ -61,7 +63,7 @@ impl eframe::App for MyApp {
                 stroke: egui::Stroke::new(4.0, egui::Color32::YELLOW),
             };
             ui.painter().add(egui::Shape::Circle(circle));
-            self.times += 1;
+            self.times += 2;
         });
     }
 }
