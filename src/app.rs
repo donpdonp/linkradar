@@ -1,3 +1,4 @@
+use std::sync::mpsc::Receiver;
 use eframe::egui;
 use eframe::epaint;
 use fastping_rs::{PingResult, Pinger};
@@ -5,6 +6,7 @@ use log;
 use std::thread;
 use std::thread::spawn;
 use std::time::Duration;
+use eframe::egui::Context;
 
 pub struct MyApp {
     times: u32,
@@ -24,25 +26,28 @@ impl MyApp {
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
         let ectx = cc.egui_ctx.clone();
+        let app = MyApp { times: 4};
 
-        spawn(move || loop {
-            match results.recv() {
-                Ok(result) => match result {
-                    PingResult::Idle { addr } => {
-                        log::error!("Idle Address {}.", addr);
-                    }
-                    PingResult::Receive { addr, rtt } => {
-                        log::info!("Receive from Address {} in {:?}.", addr, rtt);
-                    }
-                },
-                Err(_) => panic!("Worker threads disconnected before the solution was found!"),
-            }
+        spawn(move || { netloop(results, ectx)});
+        app
+    }
+}
 
-            ectx.request_repaint();
-            thread::sleep(Duration::from_secs(1));
-        });
-
-        MyApp { times: 4 }
+fn netloop(results: Receiver<PingResult>, ectx: Context) {
+    loop {
+        match results.recv() {
+            Ok(result) => match result {
+                PingResult::Idle { addr } => {
+                    log::error!("Idle Address {}.", addr);
+                }
+                PingResult::Receive { addr, rtt } => {
+                    log::info!("Receive from Address {} in {:?}.", addr, rtt);
+                }
+            },
+            Err(_) => panic!("Worker threads disconnected before the solution was found!"),
+        }
+        ectx.request_repaint();
+        thread::sleep(Duration::from_secs(1));
     }
 }
 
@@ -62,6 +67,7 @@ impl eframe::App for MyApp {
             };
             ui.painter().add(egui::Shape::Circle(circle));
             self.times += 1;
+            log::info!("update() loop times {}", self.times);
         });
     }
 }
