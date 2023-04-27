@@ -46,7 +46,8 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.app_receiver.try_recv() {
-                Ok(result) => match result { true => self.times = 0,
+                Ok(result) => match result {
+                    true => self.times = 0,
                     false => {}
                 },
                 Err(_) => {}
@@ -63,7 +64,9 @@ impl eframe::App for MyApp {
                 stroke: egui::Stroke::new(4.0, egui::Color32::YELLOW),
             };
             ui.painter().add(egui::Shape::Circle(circle));
-            self.times += 2;
+            if self.times < win_size.y as u32 {
+                self.times += 2
+            }
         });
     }
 }
