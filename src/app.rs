@@ -1,52 +1,43 @@
-use std::sync::mpsc::Receiver;
-use eframe::egui;
-use eframe::epaint;
-use fastping_rs::{PingResult, Pinger};
-use log;
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::thread::spawn;
 use std::time::Duration;
+
+use eframe::egui;
 use eframe::egui::Context;
+use eframe::epaint;
 
 pub struct MyApp {
     times: u32,
+    pub app_receiver: Receiver<()>,
 }
 
 impl MyApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let (pinger, results) = match Pinger::new(None, Some(56)) {
-            Ok((pinger, results)) => (pinger, results),
-            Err(e) => panic!("Error creating pinger: {}", e),
-        };
-        pinger.add_ipaddr("4.2.2.2");
-        pinger.run_pinger();
-
+    pub fn new(cc: &eframe::CreationContext<'_>, ping_receiver: Receiver<()>) -> Self {
         // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
         // Restore app state using cc.storage (requires the "persistence" feature).
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
+        let (app_sender, app_receiver) = channel::<()>();
         let ectx = cc.egui_ctx.clone();
-        let app = MyApp { times: 4};
-
-        spawn(move || { netloop(results, ectx)});
+        let app = MyApp {
+            times: 4,
+            app_receiver,
+        };
+        spawn(move || netloop(ping_receiver, ectx, app_sender));
         app
     }
 }
 
-fn netloop(results: Receiver<PingResult>, ectx: Context) {
+fn netloop(ping_receiver: Receiver<()>, ectx: Context, send: Sender<()>) {
     loop {
-        match results.recv() {
-            Ok(result) => match result {
-                PingResult::Idle { addr } => {
-                    log::error!("Idle Address {}.", addr);
-                }
-                PingResult::Receive { addr, rtt } => {
-                    log::info!("Receive from Address {} in {:?}.", addr, rtt);
-                }
+        match ping_receiver.recv() {
+            Ok(result) => {
+                send.send(()).unwrap();
+                ectx.request_repaint();
             },
-            Err(_) => panic!("Worker threads disconnected before the solution was found!"),
+            Err(_) => { },
         }
-        ectx.request_repaint();
         thread::sleep(Duration::from_secs(1));
     }
 }
@@ -54,6 +45,10 @@ fn netloop(results: Receiver<PingResult>, ectx: Context) {
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
+            match self.app_receiver.try_recv() {
+                Ok(_) => self.times = 0,
+                Err(_) => {}
+            }
             let win_size = frame.info().window_info.size;
             ui.heading("linkmonitor");
             let circle = epaint::CircleShape {
@@ -67,7 +62,6 @@ impl eframe::App for MyApp {
             };
             ui.painter().add(egui::Shape::Circle(circle));
             self.times += 1;
-            log::info!("update() loop times {}", self.times);
         });
     }
 }
