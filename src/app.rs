@@ -48,9 +48,9 @@ impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             let win_size = frame.info().window_info.size;
-            log::info!("height {} momentum {}", self.height, self.momentum);
+            //log::info!("height {} momentum {}", self.height, self.momentum);
             match self.app_receiver.try_recv() {
-                Ok(result) => self.momentum = ((result * 1000.0)/win_size.y)*win_size.y,
+                Ok(result) => self.momentum = ((result * 1000.0) / win_size.y) * win_size.y,
                 Err(_) => {}
             }
             self.momentum -= 1.7;
