@@ -28,7 +28,7 @@ fn netloop(results: Receiver<PingResult>, send: Sender<f32>) {
         match results.recv() {
             Ok(result) => match result {
                 PingResult::Idle { addr } => {
-                    log::error!("Idle Address {}.", addr);
+                    //log::error!("Idle Address {}.", addr);
                 }
                 PingResult::Receive { addr, rtt } => {
                     log::info!("Receive from Address {} in {:?}.", addr, rtt);
